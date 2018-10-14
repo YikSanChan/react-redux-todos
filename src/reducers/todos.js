@@ -31,3 +31,19 @@ const todos = (state = [], action) => {
 };
 
 export default todos;
+
+// selector
+// In the reducers, the state argument corresponds to the state of this particular reducer, so we will follow the same
+// convention for selectors.
+export const getVisibleTodos = (state, filter) => {
+  switch (filter) {
+    case "all":
+      return state;
+    case "completed":
+      return state.filter(todo => todo.completed);
+    case "active":
+      return state.filter(todo => !todo.completed);
+    default:
+      return state;
+  }
+};
