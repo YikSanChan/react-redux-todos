@@ -1,8 +1,7 @@
 import { combineReducers, createStore } from "redux";
 import * as ReactDOM from "react-dom";
-import React, { Component } from "react";
-import PropTypes from "prop-types";
-import { Provider } from "react-redux";
+import React from "react";
+import { Provider, connect } from "react-redux";
 
 const todo = (state, action) => {
   switch (action.type) {
@@ -63,11 +62,9 @@ const getVisibleTodos = (todos, filter) => {
   }
 };
 
-/**
- * Functional components don't have 'this', how to get context?
- * They receive context as a second argument (after props)
- */
-const AddTodo = (props, { store }) => {
+let nextTodoId = 0;
+
+let AddTodo = ({ dispatch }) => {
   let input;
   return (
     <div>
@@ -78,7 +75,7 @@ const AddTodo = (props, { store }) => {
       />
       <button
         onClick={() => {
-          store.dispatch({
+          dispatch({
             type: "ADD_TODO",
             id: nextTodoId++,
             text: input.value
@@ -92,9 +89,7 @@ const AddTodo = (props, { store }) => {
   );
 };
 
-AddTodo.contextTypes = {
-  store: PropTypes.object
-};
+AddTodo = connect()(AddTodo);
 
 const Todo = ({ onClick, completed, text }) => (
   <li
@@ -115,34 +110,27 @@ const TodoList = ({ todos, onTodoClick }) => (
   </ul>
 );
 
-class VisibleTodoList extends Component {
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => this.forceUpdate());
-  }
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-  render() {
-    const { store } = this.context;
-    const state = store.getState();
-    return (
-      <TodoList
-        todos={getVisibleTodos(state.todos, state.visibilityFilter)}
-        onTodoClick={id =>
-          store.dispatch({
-            type: "TOGGLE_TODO",
-            id
-          })
-        }
-      />
-    );
-  }
-}
-
-VisibleTodoList.contextTypes = {
-  store: PropTypes.object
+const mapStateToTodoListProps = state => {
+  return {
+    todos: getVisibleTodos(state.todos, state.visibilityFilter)
+  };
 };
+
+const mapDispatchToTodoListProps = dispatch => {
+  return {
+    onTodoClick: id => {
+      dispatch({
+        type: "TOGGLE_TODO",
+        id
+      });
+    }
+  };
+};
+
+const VisibleTodoList = connect(
+  mapStateToTodoListProps,
+  mapDispatchToTodoListProps
+)(TodoList);
 
 const Link = ({ active, children, onClick }) => {
   if (active) {
@@ -161,37 +149,26 @@ const Link = ({ active, children, onClick }) => {
   );
 };
 
-class FilterLink extends Component {
-  componentDidMount() {
-    const { store } = this.context;
-    store.subscribe(() => this.forceUpdate());
-  }
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-  render() {
-    const props = this.props;
-    const { store } = this.context;
-    const state = store.getState();
-    return (
-      <Link
-        active={props.filter === state.visibilityFilter}
-        onClick={() =>
-          store.dispatch({
-            type: "SET_VISIBILITY_FILTER",
-            filter: props.filter
-          })
-        }
-      >
-        {props.children}
-      </Link>
-    );
-  }
-}
-
-FilterLink.contextTypes = {
-  store: PropTypes.object
+const mapStateToLinkProps = (state, ownProps) => {
+  return {
+    active: ownProps.filter === state.visibilityFilter
+  };
 };
+
+const mapDispatchToLinkProps = (dispatch, ownProps) => {
+  return {
+    onClick: () =>
+      dispatch({
+        type: "SET_VISIBILITY_FILTER",
+        filter: ownProps.filter
+      })
+  };
+};
+
+const FilterLink = connect(
+  mapStateToLinkProps,
+  mapDispatchToLinkProps
+)(Link);
 
 const Footer = () => (
   <p>
@@ -201,7 +178,6 @@ const Footer = () => (
   </p>
 );
 
-let nextTodoId = 0;
 const TodoApp = () => (
   <div>
     <AddTodo />
