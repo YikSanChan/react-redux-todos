@@ -61,9 +61,7 @@ const getVisibleTodos = (todos, filter) => {
   }
 };
 
-const store = createStore(todoApp);
-
-const AddTodo = () => {
+const AddTodo = ({ store }) => {
   let input;
   return (
     <div>
@@ -109,12 +107,14 @@ const TodoList = ({ todos, onTodoClick }) => (
 
 class VisibleTodoList extends Component {
   componentDidMount() {
+    const { store } = this.props;
     this.unsubscribe = store.subscribe(() => this.forceUpdate());
   }
   componentWillUnmount() {
     this.unsubscribe();
   }
   render() {
+    const { store } = this.props;
     const state = store.getState();
     return (
       <TodoList
@@ -149,54 +149,60 @@ const Link = ({ active, children, onClick }) => {
 
 class FilterLink extends Component {
   componentDidMount() {
+    const { store } = this.props;
     store.subscribe(() => this.forceUpdate());
   }
   componentWillUnmount() {
     this.unsubscribe();
   }
   render() {
-    const props = this.props;
+    const { filter, children, store } = this.props;
     const state = store.getState();
     return (
       <Link
-        active={props.filter === state.visibilityFilter}
+        active={filter === state.visibilityFilter}
         onClick={() =>
           store.dispatch({
             type: "SET_VISIBILITY_FILTER",
-            filter: props.filter
+            filter: filter
           })
         }
       >
-        {props.children}
+        {children}
       </Link>
     );
   }
 }
 
-const Footer = () => (
+const Footer = ({ store }) => (
   <p>
-    Show: <FilterLink filter="SHOW_ALL">All</FilterLink>{" "}
-    <FilterLink filter="SHOW_ACTIVE">Active</FilterLink>{" "}
-    <FilterLink filter="SHOW_COMPLETED">Completed</FilterLink>
+    Show:{" "}
+    <FilterLink filter="SHOW_ALL" store={store}>
+      All
+    </FilterLink>{" "}
+    <FilterLink filter="SHOW_ACTIVE" store={store}>
+      Active
+    </FilterLink>{" "}
+    <FilterLink filter="SHOW_COMPLETED" store={store}>
+      Completed
+    </FilterLink>
   </p>
 );
 
 let nextTodoId = 0;
-class TodoApp extends Component {
-  render() {
-    return (
-      <div>
-        <AddTodo />
-        <VisibleTodoList />
-        <Footer />
-      </div>
-    );
-  }
-}
+const TodoApp = ({ store }) => (
+  <div>
+    <AddTodo store={store} />
+    <VisibleTodoList store={store} />
+    <Footer store={store} />
+  </div>
+);
 
 const render = () => {
-  ReactDOM.render(<TodoApp />, document.getElementById("root"));
+  ReactDOM.render(
+    <TodoApp store={createStore(todoApp)} />,
+    document.getElementById("root")
+  );
 };
 
-store.subscribe(render);
 render();
