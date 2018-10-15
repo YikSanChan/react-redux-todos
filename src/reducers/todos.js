@@ -1,3 +1,5 @@
+import { combineReducers } from "redux";
+
 const todo = (state, action) => {
   switch (action.type) {
     case "ADD_TODO":
@@ -19,30 +21,49 @@ const todo = (state, action) => {
   }
 };
 
-const todos = (state = [], action) => {
+const byId = (state = {}, action) => {
   switch (action.type) {
     case "ADD_TODO":
-      return [...state, todo(undefined, action)];
     case "TOGGLE_TODO":
-      return state.map(t => todo(t, action));
+      return {
+        ...state,
+        [action.id]: todo(state[action.id], action)
+      };
     default:
       return state;
   }
 };
 
+const allIds = (state = [], action) => {
+  switch (action.type) {
+    case "ADD_TODO":
+      return [...state, action.id];
+    default:
+      return state;
+  }
+};
+
+const todos = combineReducers({
+  byId,
+  allIds
+});
+
 export default todos;
 
-// selector
+// selectors
 // In the reducers, the state argument corresponds to the state of this particular reducer, so we will follow the same
 // convention for selectors.
+const getAllTodos = state => state.allIds.map(id => state.byId[id]);
+
 export const getVisibleTodos = (state, filter) => {
+  const allTodos = getAllTodos(state);
   switch (filter) {
     case "all":
-      return state;
+      return allTodos;
     case "completed":
-      return state.filter(todo => todo.completed);
+      return allTodos.filter(todo => todo.completed);
     case "active":
-      return state.filter(todo => !todo.completed);
+      return allTodos.filter(todo => !todo.completed);
     default:
       return state;
   }
