@@ -1,9 +1,8 @@
 import { connect } from "react-redux";
-import { receiveTodos, toggleTodo } from "../actions";
+import * as actions from "../actions";
 import TodoList from "./TodoList";
 import { withRouter } from "react-router-dom";
 import { getVisibleTodos } from "../reducers";
-import { fetchTodos } from "../api";
 import React, { Component } from "react";
 
 class VisibleTodoList extends Component {
@@ -18,10 +17,8 @@ class VisibleTodoList extends Component {
   }
 
   fetchData() {
-    const { filter, receiveTodos } = this.props;
-    fetchTodos(filter).then(todos => {
-      receiveTodos(filter, todos);
-    });
+    const { filter, fetchTodos } = this.props;
+    fetchTodos(filter);
   }
 
   render() {
@@ -41,7 +38,7 @@ const mapStateToProps = (state, { match }) => {
 VisibleTodoList = withRouter(
   connect(
     mapStateToProps,
-    { onTodoClick: toggleTodo, receiveTodos }
+    actions
   )(VisibleTodoList)
 );
 
