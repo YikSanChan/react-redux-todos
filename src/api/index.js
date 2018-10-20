@@ -1,57 +1,79 @@
-import { v4 } from "uuid";
+import * as firebase from "firebase";
 
-// in-memory database
-const fakeDatabase = {
-  todos: [
-    {
-      id: v4(),
-      text: "hey",
-      completed: true
-    },
-    {
-      id: v4(),
-      text: "ho",
-      completed: true
-    },
-    {
-      id: v4(),
-      text: "let’s go",
-      completed: false
-    }
-  ]
+const config = {
+  apiKey: "AIzaSyBQfXENb-b54ET9iWgPXkqLLBtahc9bZGU",
+  authDomain: "react-redux-todos-692c2.firebaseapp.com",
+  databaseURL: "https://react-redux-todos-692c2.firebaseio.com",
+  projectId: "react-redux-todos-692c2",
+  storageBucket: "react-redux-todos-692c2.appspot.com",
+  messagingSenderId: "455779460274"
+};
+const settings = { timestampsInSnapshots: true };
+
+firebase.initializeApp(config);
+const db = firebase.firestore();
+db.settings(settings);
+
+const fetcher = filter => xs => {
+  switch (filter) {
+    case "all":
+      return xs;
+    case "completed":
+      return xs.filter(x => x.completed);
+    case "active":
+      return xs.filter(x => !x.completed);
+    default:
+      return xs;
+  }
 };
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+export const fetchTodos = filter => {
+  return db
+    .collection("todos")
+    .get()
+    .then(snapshot =>
+      snapshot.docs.map(doc => {
+        return {
+          id: doc.id,
+          ...doc.data()
+        };
+      })
+    )
+    .then(todos => {
+      return fetcher(filter)(todos);
+    });
+};
 
-export const fetchTodos = filter =>
-  delay(500).then(() => {
-    const todos = fakeDatabase.todos;
-    switch (filter) {
-      case "all":
-        return todos;
-      case "completed":
-        return todos.filter(todo => todo.completed);
-      case "active":
-        return todos.filter(todo => !todo.completed);
-      default:
-        return todos;
-    }
-  });
+export const addTodo = text => {
+  const todo = {
+    text,
+    completed: false
+  };
+  return db
+    .collection("todos")
+    .add(todo)
+    .then(docRef => {
+      return {
+        id: docRef.id,
+        ...todo
+      };
+    });
+};
 
-export const addTodo = text =>
-  delay(500).then(() => {
-    const todo = {
-      id: v4(),
-      text,
-      completed: false
-    };
-    fakeDatabase.todos.push(todo);
-    return todo;
+export const toggleTodo = id => {
+  const todoDocRef = db.collection("todos").doc(id);
+  return db.runTransaction(txn => {
+    return txn.get(todoDocRef).then(todoDoc => {
+      if (!todoDoc.exists) {
+        throw new Error("Document does not exist!");
+      }
+      const completed = !todoDoc.data().completed;
+      txn.update(todoDocRef, { completed });
+      return {
+        id: todoDoc.id,
+        ...todoDoc.data(),
+        completed
+      };
+    });
   });
-
-export const toggleTodo = id =>
-  delay(500).then(() => {
-    const todo = fakeDatabase.todos.find(t => t.id === id);
-    todo.completed = !todo.completed;
-    return todo;
-  });
+};

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "firebase": "^5.5.5",
     "lodash": "^4.17.10",
     "normalizr": "^3.3.0",
     "prop-types": "^15.6.2",
