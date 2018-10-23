@@ -6,6 +6,7 @@
 - Builds upon [React](https://github.com/facebook/react) and [Redux](https://github.com/reduxjs/redux).
 - Hosts on [Firebase Hosting](https://firebase.google.com/docs/hosting/).
 - Stores data on [Cloud Firestore](https://firebase.google.com/docs/firestore/).
+- Searches powered by [Algolia](https://www.algolia.com/doc/).
 
 ## Credits
 
